@@ -1,7 +1,7 @@
 /*
  * debugConsole.c
  *
- *  Created on: 04-Apr-2019
+ *  Created on: 04-Apr-2021
  *      Author: gmahez
  *
  */
@@ -18,7 +18,12 @@ UART_HandleTypeDef debugPort;          //!< There is a LL driver / Generated cod
 SemaphoreHandle_t xMutexDebugUart = NULL;
 QueueHandle_t gDebugConsoleQ;
 
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart);
+
 static bool debugConsoletxCptF = true;
+
+void USART2_IRQHandler(void);
+
 
 static bool debugConsoleInit( void );
 static bool debugConsoleFlushOut( void );
@@ -61,9 +66,9 @@ void debugconsoleTask(void)
 			debugText("\n#########    BASE CODE     ######### ");
 			 vTaskDelay(100);
 				debugText("\n*********************************************1\n\r");
-//				debugText("\n2*********************************************2");
-//				debugText("\n3*********************************************3");
-//				debugText("\n**********************************************4");
+				debugText("\n2*********************************************2");
+				debugText("\n3*********************************************3");
+				debugText("\n**********************************************4");
 			 vTaskDelay(100);
 		}else
 		{
@@ -113,6 +118,7 @@ static bool debugConsoleInit( void )
      debugPort.Init.Mode = UART_MODE_TX_RX;
      debugPort.Init.HwFlowCtl = UART_HWCONTROL_NONE;
      debugPort.Init.OverSampling = UART_OVERSAMPLING_16;
+
      if (HAL_UART_Init(&debugPort) != HAL_OK)
      {
          returnValue = false;
@@ -308,13 +314,11 @@ static bool debugConsoleFlushOut( void )
 
     if( ( mDebugConInit ) && ( writePtr != readPtr ) )
     {
-		//while (true != debugConsoletxCptF );		//!< Wait until above text finish.
-//        debugConsoletxCptF = false;
 
 		if( writePtr > readPtr )
 		{
-     		//if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr)) )
-         		if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr), 100) )
+     		if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr)) )
+         	//if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr), 100) )
 			{
 				returnValue &= false;
 			}
@@ -322,23 +326,13 @@ static bool debugConsoleFlushOut( void )
 
 		}else
 		{
-			//if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr)) )
-				if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr), 100 ) )
+			if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr)) )
+			//if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr), 100 ) )
 			{
 				returnValue &= false;
 			}
 			debugConsoletxCptF = false;
-			vTaskDelay( 20 );
-
-			//while ( true !=  debugConsoletxCptF );		//!< Wait until above text finish.
-
-			//if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)debugOutBuffer, writePtr) )
-				if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)debugOutBuffer, writePtr, 100) )
-			{
-				returnValue &= false;
-			}
-
-			readPtr = writePtr;				//!< if both are success , then update read buffer.
+			readPtr = 0;
 
 		}
 	}
@@ -360,3 +354,4 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	debugConsoletxCptF = true;
 	return;
 }
+

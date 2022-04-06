@@ -1,7 +1,7 @@
 /*
  * application.h
  *
- *  Created on: 22-Mar-2019
+ *  Created on: 22-Mar-2022
  *      Author: gmahez
  */
 
@@ -28,7 +28,7 @@ typedef struct taskpara
 //!< PLEASE TAKECARE WHILE MODIFING "sysTaskList" and sysTask
 typedef enum{
 	CONSOLE_TASK,
-	//DIGITAL_TASK,
+	OUTERHMI_TASK,
 	//CANMASTER_TASK,
 	MAXMUM_TASK
 }sysTaskList_t;
