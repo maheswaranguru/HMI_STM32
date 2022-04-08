@@ -26,7 +26,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-extern UART_HandleTypeDef debugPort;
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
@@ -59,6 +58,7 @@ extern UART_HandleTypeDef huart2;
 extern TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN EV */
+extern UART_HandleTypeDef debugPort;
 
 /* USER CODE END EV */
 
@@ -180,9 +180,9 @@ void TIM1_UP_TIM10_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-    HAL_UART_IRQHandler(&debugPort);
+   // HAL_UART_IRQHandler(&debugPort);
   /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
+  HAL_UART_IRQHandler(&debugPort);
   /* USER CODE BEGIN USART2_IRQn 1 */
 
   /* USER CODE END USART2_IRQn 1 */

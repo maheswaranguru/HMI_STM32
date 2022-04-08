@@ -31,6 +31,7 @@ extern SemaphoreHandle_t xMutexDebugUart;
 
 
 void debugconsoleTask(void);
+//void USART2_IRQHandler(void);
 
 bool debugText( const char *debugMsg );
 bool debugValue( uint32_t value, uint8_t baseValue );

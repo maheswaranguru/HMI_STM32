@@ -22,9 +22,6 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart);
 
 static bool debugConsoletxCptF = true;
 
-void USART2_IRQHandler(void);
-
-
 static bool debugConsoleInit( void );
 static bool debugConsoleFlushOut( void );
 
@@ -43,6 +40,14 @@ char tempBuff[50] = {0};
 bool mDebugConInit = false;
 
 unsigned char hiw[] = "Hello World\n\r";
+
+volatile static uint16_t RxByteCnt = 0;
+volatile static uint8_t RxString[25] = { 0 };
+volatile static uint8_t inputString[25] = { 0 };
+
+
+uint8_t rxByte = 0;
+
 
 void debugconsoleTask(void)
 {
@@ -75,6 +80,8 @@ void debugconsoleTask(void)
 			while(1);
 		}
     }
+
+    HAL_UART_Receive_IT( &debugPort, &rxByte, 1);
 
     for (;;)
     {
@@ -354,4 +361,39 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	debugConsoletxCptF = true;
 	return;
 }
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+
+
+    RxString[RxByteCnt] = rxByte;
+
+
+    if( ( 25 <= RxByteCnt) || ( '\r' == rxByte) || ( '\n' == rxByte) )
+    {
+        if( RxByteCnt != 0 )
+        {
+            strncpy( inputString, RxString, (RxByteCnt) );
+            inputString[RxByteCnt] = '\0';
+            RxByteCnt = 0;
+
+        }else
+        {
+            RxByteCnt = 0;
+        }
+
+    }else
+    {
+        RxByteCnt++;
+    }
+
+
+    HAL_UART_Receive_IT( &debugPort, &rxByte, 1);
+
+
+}
+//void USART2_IRQHandler(void)
+//{
+//    HAL_UART_IRQHandler(&debugPort);
+//}
 
