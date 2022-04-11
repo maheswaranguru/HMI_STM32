@@ -101,6 +101,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_USART2_UART_Init();
   MX_SPI1_Init();
 
   /* Initialize interrupts */
@@ -361,19 +362,19 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  	  HAL_SPI_Transmit ( &hspi1, (uint8_t*) &leds, 18, 0xFFFF );
-	  	  HAL_GPIO_WritePin(GPIOG, GPIO_PIN_11 , GPIO_PIN_SET);  //LE
-	      osDelay ( 1 );
-	      HAL_GPIO_WritePin(GPIOG, GPIO_PIN_11 , GPIO_PIN_RESET);  //LE;
-	      osDelay ( 1 );
-	      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13 , GPIO_PIN_RESET);  //LE;
+//	  	  HAL_SPI_Transmit ( &hspi1, (uint8_t*) &leds, 18, 0xFFFF );
+//	  	  HAL_GPIO_WritePin(GPIOG, GPIO_PIN_11 , GPIO_PIN_SET);  //LE
+//	      osDelay ( 1 );
+//	      HAL_GPIO_WritePin(GPIOG, GPIO_PIN_11 , GPIO_PIN_RESET);  //LE;
+//	      osDelay ( 1 );
+//	      HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13 , GPIO_PIN_RESET);  //LE;
+//
+//	      leds.var1=leds.var1<<1;
+//	      leds.var2 = leds.var2>>1;
 
-	      leds.var1=leds.var1<<1;
-	      leds.var2 = leds.var2>>1;
 
 
-
-    osDelay(1000);
+    osDelay(1);
   }
   /* USER CODE END 5 */
 }
