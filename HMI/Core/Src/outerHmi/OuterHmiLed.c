@@ -42,6 +42,8 @@ void outerHMITask ( void )
 {
 uint16_t i = 0;
 
+int8_t testEye = 0;
+
     InitLedSpi ();
     osDelay ( 100 );
 
@@ -52,7 +54,16 @@ uint16_t i = 0;
     {
         oHmiRightSegmentUpdate( i, 0);
         oHmiLeftSegmentUpdate( i, 0 );
-        (void) UpdateLED( &oHmiLedStatus );
+
+        oHmiRightEyeBrowUpdate( testEye );
+        oHmiLeftEyeBrowUpdate( testEye );
+        testEye +=10;
+        if( testEye > 100 )
+        {
+            testEye = -100;
+        }
+
+        (void) UpdateLED( &oHmiLedStatus[0] );
         osDelay ( 500 );
     }
 
@@ -60,7 +71,7 @@ uint16_t i = 0;
     {
         if( true == oHmiLedUpdateRequired_f )
         {
-            (void) UpdateLED( &oHmiLedStatus );
+            (void) UpdateLED( &oHmiLedStatus[0] );
         }
 
         LEDSelfTest();
@@ -94,7 +105,7 @@ void InitLedSpi ( void )
 
     if ( HAL_SPI_Init ( &ledDriverSpi ) != HAL_OK )
     {
-        Error_Handler ();
+        //Error_Handler ();
     }
 
 }
@@ -152,7 +163,7 @@ bool LEDSelfTest ( void )
                 retvalue = false;
             }
             oHmiLedStatus[ Bytecnt ] = 0;
-            osDelay ( 1000 );
+            osDelay ( 500 );
         }
         debugTextValue ( "\nBYTEs  :  ", Bytecnt, DECIMAL );
 
@@ -181,7 +192,7 @@ bool oHmiAllLedOff ( void )
 {
     uint8_t LedData[ LED_BYTE_SIZE ] = { 0 };
 
-    return ( UpdateLED ( &LedData ) );
+    return ( UpdateLED ( LedData ) );
 
 }
 /*********************************************************************************
@@ -381,43 +392,165 @@ void oHmiLeftSegmentUpdate( int16_t value, uint8_t units )
 }
 /*********************************************************************************
  *Name :- oHmiRightEyeBrowUpdate
- *Para1:- eProcess
+ *Para1:- percent to show in bars
  *Return:-N/A
- *Details:-  Job LED on outerpanel
+ *Details:-  Eyebrow LED bars control.
  **********************************************************************************/
 void oHmiRightEyeBrowUpdate( int8_t percent )
 {
     if( ( percent >= -100 ) || ( percent <= 100 ) )
     {
-        oHmiLedStatus[ RIGHT_EYEBROW_BYTE1 ] &= ~(RIGHT_EYEBROW_MASK_ALL1);
-        oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] &= ~(RIGHT_EYEBROW_MASK_ALL2);
+        oHmiLedStatus[ RIGHT_EYEBROW_BYTE1 ] &= (uint8_t) ~(RIGHT_EYEBROW_MASK_ALL1);
+        oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] &= (uint8_t) ~(RIGHT_EYEBROW_MASK_ALL2);
 
         if( 0 < percent  )  //!< Positive Side
         {
-            if( ( percent > 0 ) && ( percent < 20 ) )
+            if( ( percent > 0 ) && ( percent < 10 ) )
             {
+               oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] |= RIGHT_EYEBROW_MASK_CTRW ;
+
+            }else if( ( percent >= 10 ) && ( percent < 20 ) )
+            {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE2] |= RIGHT_EYEBROW_MASK_CTRG ;
 
             }else if( ( percent >= 20 ) && ( percent < 40 ) )
             {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] |= RIGHT_EYEBROW_MASK_20 ;
 
-            }else if( ( percent >= 400 ) && ( percent < 60 ) )
+            }else if( ( percent >= 40 ) && ( percent < 60 ) )
             {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE1 ] |= RIGHT_EYEBROW_MASK_40 ;
 
             }else if( ( percent >= 60 ) && ( percent < 80 ) )
             {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE1 ] |= RIGHT_EYEBROW_MASK_60 ;
 
             }else if( ( percent >= 80 ) && ( percent < 100 ) )
             {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE1 ] |= RIGHT_EYEBROW_MASK_80 ;
 
-            }else
+            }else if( percent == 100 )
             {
-
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE1 ] |= RIGHT_EYEBROW_MASK_100 ;
             }
 
         }else  //!< Negative side
         {
+            if( ( percent < 0 ) && ( percent >= -10 ) )
+            {
+               oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] |= RIGHT_EYEBROW_MASK_CTRW ;
+
+            }else if( ( percent < -10 ) && ( percent > -20 ) )
+            {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] |= RIGHT_EYEBROW_MASK_CTRG ;
+
+            }else if( ( percent <= -20 ) && ( percent > -40 ) )
+            {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] |= RIGHT_EYEBROW_MASK_N20 ;
+
+            }else if( ( percent <= -40 ) && ( percent >-60 ) )
+            {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] |= RIGHT_EYEBROW_MASK_N40 ;
+
+            }else if( ( percent <= -60 ) && ( percent > -80 ) )
+            {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] |= RIGHT_EYEBROW_MASK_N60 ;
+
+            }else if( ( percent <= -80 ) && ( percent > -100 ) )
+            {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] |= RIGHT_EYEBROW_MASK_N80 ;
+
+            }else if( percent == -100 )
+            {
+                oHmiLedStatus[ RIGHT_EYEBROW_BYTE2 ] |= RIGHT_EYEBROW_MASK_N100 ;
+            }
 
         }
+
+        oHmiLedUpdateRequired_f = true;
+
+    }
+}
+
+/*********************************************************************************
+ *Name :- oHmiLeftEyeBrowUpdate
+ *Para1:- percent to show in bars
+ *Return:-N/A
+ *Details:-  Eyebrow LED bars control.
+ **********************************************************************************/
+void oHmiLeftEyeBrowUpdate( int8_t percent )
+{
+    if( ( percent >= -100 ) || ( percent <= 100 ) )
+    {
+        oHmiLedStatus[ LEFT_EYEBROW_BYTE1 ] &= (uint8_t) ~(LEFT_EYEBROW_MASK_ALL1);
+        oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] &= (uint8_t) ~(LEFT_EYEBROW_MASK_ALL2);
+
+        if( 0 < percent  )  //!< Positive Side
+        {
+            if( ( percent > 0 ) && ( percent < 10 ) )
+            {
+               oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] |= LEFT_EYEBROW_MASK_CTRW ;
+
+            }else if( ( percent >= 10 ) && ( percent < 20 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE2] |= LEFT_EYEBROW_MASK_CTRG ;
+
+            }else if( ( percent >= 20 ) && ( percent < 40 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] |= LEFT_EYEBROW_MASK_20 ;
+
+            }else if( ( percent >= 40 ) && ( percent < 60 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE1 ] |= LEFT_EYEBROW_MASK_40 ;
+
+            }else if( ( percent >= 60 ) && ( percent < 80 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE1 ] |= LEFT_EYEBROW_MASK_60 ;
+
+            }else if( ( percent >= 80 ) && ( percent < 100 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE1 ] |= LEFT_EYEBROW_MASK_80 ;
+
+            }else
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE1 ] |= LEFT_EYEBROW_MASK_100 ;
+            }
+
+        }else  //!< Negative side
+        {
+            if( ( percent < 0 ) && ( percent >= -10 ) )
+            {
+               oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] |= LEFT_EYEBROW_MASK_CTRW ;
+
+            }else if( ( percent < -10 ) && ( percent > -20 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] |= LEFT_EYEBROW_MASK_CTRG ;
+
+            }else if( ( percent <= -20 ) && ( percent > -40 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] |= LEFT_EYEBROW_MASK_N20 ;
+
+            }else if( ( percent <= -40 ) && ( percent >-60 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] |= LEFT_EYEBROW_MASK_N40 ;
+
+            }else if( ( percent <= -60 ) && ( percent > -80 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] |= LEFT_EYEBROW_MASK_N60 ;
+
+            }else if( ( percent <= -80 ) && ( percent > -100 ) )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] |= LEFT_EYEBROW_MASK_N80 ;
+
+            }else if ( -100 == percent )
+            {
+                oHmiLedStatus[ LEFT_EYEBROW_BYTE2 ] |= LEFT_EYEBROW_MASK_N100 ;
+            }
+
+        }
+
+        oHmiLedUpdateRequired_f = true;
+
     }
 }
 

@@ -324,8 +324,8 @@ static bool debugConsoleFlushOut( void )
 
 		if( writePtr > readPtr )
 		{
-     		if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr)) )
-         	//if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr), 100) )   //!< If don't want to use interrupt
+     		//if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr)) )
+         	if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr), 100) )   //!< If don't want to use interrupt
 			{
 				returnValue &= false;
 			}
@@ -333,8 +333,8 @@ static bool debugConsoleFlushOut( void )
 
 		}else
 		{
-			if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr)) )
-			//if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr), 100 ) )   //!< If don't want to use interrupt
+			//if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr)) )
+			if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr), 100 ) )   //!< If don't want to use interrupt
 			{
 				returnValue &= false;
 			}

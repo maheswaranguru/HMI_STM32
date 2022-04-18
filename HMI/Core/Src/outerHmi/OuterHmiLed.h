@@ -70,9 +70,7 @@ typedef enum
     JOB_THREE_WHITE = 6,
     JOB_THREE_GREEN = 7,
     jOB_THREE_DOT = 5,
-
-
-};
+}eJobLeds_t;
 
 //!< Right Side Digits Related
 
@@ -89,7 +87,7 @@ typedef enum
 //!< Right Eye Brow
 
 #define RIGHT_EYEBROW_BYTE1 8
-#define RIGHT_EYEBROW_BYTE1 9
+#define RIGHT_EYEBROW_BYTE2 9
 
 #define RIGHT_EYEBROW_MASK_20   0x80
 #define RIGHT_EYEBROW_MASK_40   0x01
@@ -109,7 +107,97 @@ typedef enum
 #define RIGHT_EYEBROW_MASK_ALL1  0x0F
 #define RIGHT_EYEBROW_MASK_ALL2  0xFF
 
+//!< LEFT Eye Brow
 
+#define LEFT_EYEBROW_BYTE1 10
+#define LEFT_EYEBROW_BYTE2 11
+
+#define LEFT_EYEBROW_MASK_20   0x80
+#define LEFT_EYEBROW_MASK_40   0x01
+#define LEFT_EYEBROW_MASK_60   0x02
+#define LEFT_EYEBROW_MASK_80   0x04
+#define LEFT_EYEBROW_MASK_100  0x08
+
+#define LEFT_EYEBROW_MASK_N20   0x10
+#define LEFT_EYEBROW_MASK_N40   0x08
+#define LEFT_EYEBROW_MASK_N60   0x04
+#define LEFT_EYEBROW_MASK_N80   0x02
+#define LEFT_EYEBROW_MASK_N100  0x01
+
+#define LEFT_EYEBROW_MASK_CTRG     0x20
+#define LEFT_EYEBROW_MASK_CTRW     0x40
+
+#define LEFT_EYEBROW_MASK_ALL1  0x0F
+#define LEFT_EYEBROW_MASK_ALL2  0xFF
+
+
+//!< Units LED
+
+#define UNITS_BYTE          4
+#define UNITS_MASK          0xFF
+
+#define UNITS_AMPS_MASK     0x80
+#define UNITS_EMBERAGE_MASK 0x40
+#define UNITS_ARC_MASK      0x20
+#define UNITS_VOLT_MASK     0x10
+#define UNITS_INC_MIN_MASK  0x08
+#define UNITS_MTR_MIN_MASK  0x02
+#define UNITS_DYNAMICS_MASK 0x01
+
+//!< Status LEDS
+#define STATUS_BYTE1    1
+#define STATUS_BYTE2    2
+#define STATUS_BYTE3    5
+#define STATUS_BYTE4    6
+#define STATUS_BYTE5    7
+
+
+#define OPTR_YELLOW_MASK    0x60
+#define OPTR_RED_MASK       0x18
+#define OPTR_GREEN_MASK     0x80
+
+#define TOOLS_RED_MASK      0x01
+#define TOOLS_GREEN_MASK    0x80
+
+#define CC_GREEN_MASK       0x02
+#define CC_YELLOW_MASK      0x04
+
+#define TEMP_RED_MASK       0x08
+#define TEMP_GREEN_MASK     0x10
+
+#define GAS_WARNING_RED_MASK    0x20
+#define GAS_WARNING_GREEN_MASK  0x40
+
+#define ANALOG_REMOTE_MASK  0x04
+
+#define ST1_TO_2_MASK       0x08
+#define ST1_TO_3_MASK       0x10
+
+#define STANDBY_GREEN_MASK  0x20
+#define STANDBY_RED_MASK    0x40
+
+#define BT_RED_MASK         0x20
+#define BT_GREEN_MASK       0x10
+
+#define LOCK_RED_MASK       0x80
+#define LOCK_GREEN_MASK     0x40
+
+
+typedef enum{
+
+    OPERATOR,
+    WELDCLOUD,
+    BLUETOOTH,
+    LOCK,
+    ANALOG_REMOTE,
+    SHIFT_TRIGGER_1_2,
+    SHIFT_TRIGGER_1_3,
+    STANDBY,
+    MAINTANACE,
+    CABLE_COMPENSATION,
+    WARNING,
+    GAS_ERROR
+}eStatusLed_t;
 
 //!< Extern functions
 
@@ -120,5 +208,7 @@ bool oHmiAllLedOff ( void );
 void oHmiJobUpdate( uint8_t jobNo );
 void oHmiRightSegmentUpdate( int16_t value, uint8_t units );
 void oHmiLeftSegmentUpdate( int16_t value, uint8_t units );
+void oHmiLeftEyeBrowUpdate( int8_t percent );
+void oHmiRightEyeBrowUpdate( int8_t percent );
 
 #endif /* SRC_OUTERHMI_OUTERHMILED_H_ */
