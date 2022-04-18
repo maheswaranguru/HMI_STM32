@@ -349,15 +349,6 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-	struct{
-		uint64_t var1;
-		uint64_t var2;
-		uint16_t var3;
-	}leds;
-
-	leds.var1 = 0x01;
-	leds.var2 = 0x8000000000000000;
-	leds.var3 = 0xFF;
 
   /* Infinite loop */
   for(;;)
