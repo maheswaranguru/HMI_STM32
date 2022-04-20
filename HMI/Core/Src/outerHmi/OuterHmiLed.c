@@ -50,22 +50,22 @@ int8_t testEye = 0;
     debugText ( "\n\n********** Enter into OuterHMI Task ***********\n\n" );
 
 
-    while( i++ < 1000)
-    {
-        oHmiRightSegmentUpdate( i, 0);
-        oHmiLeftSegmentUpdate( i, 0 );
-
-        oHmiRightEyeBrowUpdate( testEye );
-        oHmiLeftEyeBrowUpdate( testEye );
-        testEye +=10;
-        if( testEye > 100 )
-        {
-            testEye = -100;
-        }
-
-        (void) UpdateLED( &oHmiLedStatus[0] );
-        osDelay ( 500 );
-    }
+//    while( i++ < 1000)
+//    {
+//        oHmiRightSegmentUpdate( i, 0);
+//        oHmiLeftSegmentUpdate( i, 0 );
+//
+//        oHmiRightEyeBrowUpdate( testEye );
+//        oHmiLeftEyeBrowUpdate( testEye );
+//        testEye +=10;
+//        if( testEye > 100 )
+//        {
+//            testEye = -100;
+//        }
+//
+//        (void) UpdateLED( &oHmiLedStatus[0] );
+//        osDelay ( 500 );
+//    }
 
     for ( ;; )
     {
@@ -119,6 +119,8 @@ bool UpdateLED ( uint8_t *data )
 {
     bool retValue = false;
 
+    oHmiLedUpdateRequired_f = false;        //!< Clear flag to avoid race condition.
+
     HAL_GPIO_WritePin ( GPIOC, GPIO_PIN_13, GPIO_PIN_SET );        //OE;
 
     if( HAL_OK == HAL_SPI_Transmit ( &ledDriverSpi, data, LED_BYTE_SIZE, 0x10 ) )
@@ -131,7 +133,6 @@ bool UpdateLED ( uint8_t *data )
     osDelay ( 1 );
     HAL_GPIO_WritePin ( GPIOC, GPIO_PIN_13, GPIO_PIN_RESET );        //OE;
 
-    oHmiLedUpdateRequired_f = false;
 
     return retValue;
 
@@ -145,31 +146,33 @@ bool UpdateLED ( uint8_t *data )
 bool LEDSelfTest ( void )
 {
     uint8_t i = 0;
-    uint8_t j = 0;
+    uint8_t j = 5;
     uint8_t Bytecnt = 0;
     bool retvalue = true;
 
-    debugText ( "\n\n\n LED BIT Wise\n\n" );
+    debugText ( "\n\n\n***********  LED BIT Wise ************\n\n" );
 
-    for( j=0; j<18; j++)
+    for( j=5; j<8; j++)  // modified to test status led
     {
+        debugTextValue ( "\nBYTEs  :  ", j, DECIMAL );
+        debugText("\n");
+
         for ( i = 0; i < 8; i++ )
         {
             debugTextValue ( "\tBIT", i, DECIMAL );
-            oHmiLedStatus[ Bytecnt ] |= (1 << i);
+            oHmiLedStatus[ j ] |= (1 << i);
 
             if( HAL_OK != UpdateLED ( oHmiLedStatus ) )
             {
                 retvalue = false;
             }
-            oHmiLedStatus[ Bytecnt ] = 0;
-            osDelay ( 500 );
+            oHmiLedStatus[ j ] = 0;
+            osDelay ( 300 );
         }
-        debugTextValue ( "\nBYTEs  :  ", Bytecnt, DECIMAL );
 
         if ( LED_BYTE_SIZE <= Bytecnt++ )
         {
-            oHmiLedStatus[ Bytecnt - 1 ] = 0x00;
+            oHmiLedStatus[ j - 1 ] = 0x00;
             if( HAL_OK != UpdateLED ( oHmiLedStatus ) )
             {
                 retvalue = false;
@@ -554,3 +557,178 @@ void oHmiLeftEyeBrowUpdate( int8_t percent )
     }
 }
 
+/*********************************************************************************
+ *Name :- oHmiUpdateStatus
+ *Para1:- Which status LED need to Update
+ *Parm2:- What is the status of that LEDs
+ *Return:-N/A
+ *Details:-  Eyebrow LED bars control.
+ **********************************************************************************/
+void oHmiUpdateStatus( eStatusLed_t statusLed, eStatus_t status )
+{
+
+
+    switch( statusLed )
+    {
+        case OPERATOR :
+
+            //!< Clear/OFF all operator status LEDs before update.
+            oHmiLedStatus[ STATUS_BYTE1 ] &= ~( OPTR_GREEN_MASK1);
+            oHmiLedStatus[ STATUS_BYTE2 ] &= ~( OPTR_GREEN_MASK2 | OPTR_YELLOW_MASK | OPTR_RED_MASK );
+
+            if( STATUS_RED == status)
+            {
+                oHmiLedStatus[ STATUS_BYTE2 ] |=  OPTR_RED_MASK;
+
+            }else if ( STATUS_YELLOW == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE2 ] |=  OPTR_YELLOW_MASK;
+
+            }else if( STATUS_GREEN == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE1 ] |= OPTR_GREEN_MASK1;
+                oHmiLedStatus[ STATUS_BYTE2 ] |= OPTR_GREEN_MASK2;
+            }
+            break;
+
+        case WELDCLOUD :
+
+            oHmiLedStatus[ STATUS_BYTE5 ] &= ~(WELDCLOUD_RED_MASK | WELDCLOUD_GREEN_MASK );
+            if( STATUS_RED == status)
+            {
+                oHmiLedStatus[ STATUS_BYTE5 ] |=  WELDCLOUD_RED_MASK;
+
+            }else if ( STATUS_GREEN == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE5 ] |=  WELDCLOUD_GREEN_MASK;
+
+            }
+            break;
+
+        case BLUETOOTH :
+
+            oHmiLedStatus[ STATUS_BYTE1 ] &= ~( BT_GREEN_MASK | BT_RED_MASK );
+            if( STATUS_RED == status)
+            {
+                oHmiLedStatus[ STATUS_BYTE5 ] |=  BT_RED_MASK;
+
+            }else if( STATUS_GREEN == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE5 ] |=  BT_GREEN_MASK;
+            }
+            break;
+
+        case LOCK :
+
+            oHmiLedStatus[ STATUS_BYTE1 ] &= ~( LOCK_GREEN_MASK | LOCK_RED_MASK );
+            if( STATUS_RED == status)
+            {
+                oHmiLedStatus[ STATUS_BYTE5 ] |=  LOCK_RED_MASK;
+
+            }else if( STATUS_GREEN == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE5 ] |=  LOCK_GREEN_MASK;
+
+            }
+            break;
+
+        case ANALOG_REMOTE :
+
+            oHmiLedStatus[ STATUS_BYTE4 ] &= ~( ANALOG_REMOTE_RED_MASK | ANALOG_REMOTE_YELLOW_MASK | ANALOG_REMOTE_GREEN_MASK );
+            if( STATUS_RED == status)
+            {
+                oHmiLedStatus[ STATUS_BYTE4 ] |= ANALOG_REMOTE_RED_MASK;
+
+            }else if( STATUS_GREEN == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE4 ] |= ANALOG_REMOTE_GREEN_MASK;
+            }
+            break;
+
+        case SHIFT_TRIGGER_1_2 :
+
+            oHmiLedStatus[ STATUS_BYTE4 ] &= ~( ST1_TO_3_MASK );
+            oHmiLedStatus[ STATUS_BYTE4 ] |=  ST1_TO_2_MASK;
+
+            break;
+
+        case SHIFT_TRIGGER_1_3 :
+
+            oHmiLedStatus[ STATUS_BYTE4 ] &= ~( ST1_TO_2_MASK );
+            oHmiLedStatus[ STATUS_BYTE4 ] |=  ST1_TO_3_MASK ;
+           break;
+
+        case STANDBY :
+
+            oHmiLedStatus[ STATUS_BYTE4 ] &= ~( STANDBY_GREEN_MASK | STANDBY_YELLOW_MASK );
+            if( STATUS_RED == status)
+            {
+                oHmiLedStatus[ STATUS_BYTE4 ] |= STANDBY_GREEN_MASK;
+
+            }else if ( STATUS_YELLOW == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE4 ] |= STANDBY_YELLOW_MASK;
+
+            }
+            break;
+
+        case MAINTANACE :
+
+            oHmiLedStatus[ STATUS_BYTE4 ] &= ~( STANDBY_GREEN_MASK | STANDBY_YELLOW_MASK );
+            if ( STATUS_YELLOW == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE4 ] |= STANDBY_YELLOW_MASK;
+
+            }else if( STATUS_GREEN == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE4 ] |= STANDBY_GREEN_MASK;
+
+            }
+            break;
+
+        case CABLE_COMPENSATION :
+
+            oHmiLedStatus[ STATUS_BYTE3 ] &= ~( CC_GREEN_MASK | CC_YELLOW_MASK );
+            if ( STATUS_YELLOW == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE3 ] |= CC_GREEN_MASK;
+
+            }else if( STATUS_GREEN == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE3 ] |= CC_YELLOW_MASK;
+
+            }
+            break;
+
+        case WARNING :
+
+            oHmiLedStatus[ STATUS_BYTE3 ] &= ~( WARNING_RED_MASK | WARNING_YELLOW_MASK );
+            if( STATUS_RED == status)
+            {
+                oHmiLedStatus[ STATUS_BYTE3 ] |= WARNING_RED_MASK;
+
+            }else if ( STATUS_YELLOW == status )
+            {
+
+                oHmiLedStatus[ STATUS_BYTE3 ] |= WARNING_YELLOW_MASK;
+            }
+            break;
+
+        case GAS_ERROR :
+
+            oHmiLedStatus[ STATUS_BYTE3 ] &= ~( GAS_ERROR_RED_MASK | GAS_ERROR_YELLOW_MASK );
+            if( STATUS_RED == status)
+            {
+                oHmiLedStatus[ STATUS_BYTE3 ] |= GAS_ERROR_RED_MASK;
+
+            }else if ( STATUS_YELLOW == status )
+            {
+                oHmiLedStatus[ STATUS_BYTE3 ] |= GAS_ERROR_YELLOW_MASK;
+            }
+            break;
+
+        default :
+            break;
+
+    }
+}

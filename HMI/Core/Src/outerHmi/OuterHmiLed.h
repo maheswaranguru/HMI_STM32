@@ -152,35 +152,41 @@ typedef enum
 #define STATUS_BYTE5    7
 
 
-#define OPTR_YELLOW_MASK    0x60
-#define OPTR_RED_MASK       0x18
-#define OPTR_GREEN_MASK     0x80
+#define OPTR_YELLOW_MASK            0x60
+#define OPTR_RED_MASK               0x18
+#define OPTR_GREEN_MASK1            0x01   //!< This is for 1st byte only... other LED in 2nd BYTE
+#define OPTR_GREEN_MASK2            0x80   //!< This is for 2nd byte only... other LED in 1st BYTE
 
-#define TOOLS_RED_MASK      0x01
-#define TOOLS_GREEN_MASK    0x80
+#define MAINTAIN_RED_MASK           0x01
+#define MAINTAIN_GREEN_MASK         0x80
 
-#define CC_GREEN_MASK       0x02
-#define CC_YELLOW_MASK      0x04
+#define CC_GREEN_MASK               0x02
+#define CC_YELLOW_MASK              0x04
 
-#define TEMP_RED_MASK       0x08
-#define TEMP_GREEN_MASK     0x10
+#define WARNING_RED_MASK            0x08
+#define WARNING_YELLOW_MASK         0x10
 
-#define GAS_WARNING_RED_MASK    0x20
-#define GAS_WARNING_GREEN_MASK  0x40
+#define GAS_ERROR_RED_MASK          0x20
+#define GAS_ERROR_YELLOW_MASK       0x40
 
-#define ANALOG_REMOTE_MASK  0x04
+#define ANALOG_REMOTE_RED_MASK      0x01
+#define ANALOG_REMOTE_YELLOW_MASK   0x02
+#define ANALOG_REMOTE_GREEN_MASK    0x04
 
-#define ST1_TO_2_MASK       0x08
-#define ST1_TO_3_MASK       0x10
+#define ST1_TO_2_MASK               0x08
+#define ST1_TO_3_MASK               0x10
 
-#define STANDBY_GREEN_MASK  0x20
-#define STANDBY_RED_MASK    0x40
+#define STANDBY_GREEN_MASK          0x20
+#define STANDBY_YELLOW_MASK         0x40
 
-#define BT_RED_MASK         0x20
-#define BT_GREEN_MASK       0x10
+#define BT_RED_MASK                 0x20
+#define BT_GREEN_MASK               0x10
 
-#define LOCK_RED_MASK       0x80
-#define LOCK_GREEN_MASK     0x40
+#define LOCK_RED_MASK               0x80
+#define LOCK_GREEN_MASK             0x40
+
+#define WELDCLOUD_RED_MASK          0x08
+#define WELDCLOUD_GREEN_MASK        0x04
 
 
 typedef enum{
@@ -199,6 +205,13 @@ typedef enum{
     GAS_ERROR
 }eStatusLed_t;
 
+typedef enum{
+    STATUS_OFF,
+    STATUS_RED,
+    STATUS_YELLOW,
+    STATUS_GREEN
+}eStatus_t;
+
 //!< Extern functions
 
 bool LEDSelfTest ( void );
@@ -210,5 +223,6 @@ void oHmiRightSegmentUpdate( int16_t value, uint8_t units );
 void oHmiLeftSegmentUpdate( int16_t value, uint8_t units );
 void oHmiLeftEyeBrowUpdate( int8_t percent );
 void oHmiRightEyeBrowUpdate( int8_t percent );
+void oHmiUpdateStatus( eStatusLed_t statusLed, eStatus_t status );
 
 #endif /* SRC_OUTERHMI_OUTERHMILED_H_ */
