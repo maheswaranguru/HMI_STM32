@@ -12,7 +12,7 @@
 #include "application.h"
 #include "debugConsole.h"
 #include "OuterHmiLed.h"
-//#include "digitalGpio.h"
+#include "encoder.h"
 
 //extern void debugconsoleTask(void);
 //void ouuterHMITask ( void );
@@ -22,7 +22,7 @@ const sysTask_t sysTask[] =
 {
 	    { (TaskFunction_t) debugconsoleTask,    "debugconsole",     128, 0, osPriorityNormal, NULL },
 	    { (TaskFunction_t) outerHMITask,    	"outerHMI",     	128, 0, osPriorityNormal, NULL },
-//	    { (TaskFunction_t) digitalGpioTask,    	"digitalGpio",     	254, 0, osPriorityNormal, NULL },
+	    { (TaskFunction_t) userInputTask,    	"userInput",     	128, 0, osPriorityNormal, NULL },
 //	    { (TaskFunction_t) canMasterTask,    	"canMaster",     	254, 0, osPriorityNormal, NULL }
 };
 

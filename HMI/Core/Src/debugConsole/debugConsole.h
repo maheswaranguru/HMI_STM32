@@ -16,7 +16,7 @@
 
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#define RING_BUFF_SIZE	512
+#define RING_BUFF_SIZE	1024
 #define DEBUG_UART	USART2
 
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -33,12 +33,14 @@ extern SemaphoreHandle_t xMutexDebugUart;
 void debugconsoleTask(void);
 //void USART2_IRQHandler(void);
 
+bool debugTaskStatusGet( void );
+
 bool debugText( const char *debugMsg );
-bool debugValue( uint32_t value, uint8_t baseValue );
-bool debugTextValue( const char *debugMsg, uint32_t value, uint8_t baseValue );
+bool debugValue( int64_t value, uint8_t baseValue );
+bool debugTextValue( const char *debugMsg, int64_t value, uint8_t baseValue );
 
 
-bool IntToText(uint32_t value, uint8_t base, char * str );
+bool IntToText(int64_t value, uint8_t base, char * str );
 void reverseStr(char *str, uint8_t size);
 
 //void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart);

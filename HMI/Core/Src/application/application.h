@@ -29,7 +29,7 @@ typedef struct taskpara
 typedef enum{
 	CONSOLE_TASK,
 	OUTERHMI_TASK,
-	//CANMASTER_TASK,
+	USERINPUT_TASK,
 	MAXMUM_TASK
 }sysTaskList_t;
 

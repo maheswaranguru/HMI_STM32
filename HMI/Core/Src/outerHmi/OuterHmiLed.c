@@ -40,32 +40,16 @@ const uint8_t decode7segment[10] ={
  **********************************************************************************/
 void outerHMITask ( void )
 {
-uint16_t i = 0;
 
-int8_t testEye = 0;
+//int8_t testEye = 0;
 
     InitLedSpi ();
-    osDelay ( 100 );
 
-    debugText ( "\n\n********** Enter into OuterHMI Task ***********\n\n" );
+    while (true != debugTaskStatusGet());
 
-
-//    while( i++ < 1000)
-//    {
-//        oHmiRightSegmentUpdate( i, 0);
-//        oHmiLeftSegmentUpdate( i, 0 );
-//
-//        oHmiRightEyeBrowUpdate( testEye );
-//        oHmiLeftEyeBrowUpdate( testEye );
-//        testEye +=10;
-//        if( testEye > 100 )
-//        {
-//            testEye = -100;
-//        }
-//
-//        (void) UpdateLED( &oHmiLedStatus[0] );
-//        osDelay ( 500 );
-//    }
+    debugText ( "\n********** Enter into OuterHMI Task ***********\n" );
+    //debugText("\n9@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    //LEDSelfTest();
 
     for ( ;; )
     {
@@ -74,7 +58,6 @@ int8_t testEye = 0;
             (void) UpdateLED( &oHmiLedStatus[0] );
         }
 
-        LEDSelfTest();
         osDelay ( 100 );
     }
 }
@@ -150,12 +133,12 @@ bool LEDSelfTest ( void )
     uint8_t Bytecnt = 0;
     bool retvalue = true;
 
-    debugText ( "\n\n\n***********  LED BIT Wise ************\n\n" );
+    debugText ( "\n\r***********  LED BIT Wise ************\n\r" );
 
-    for( j=5; j<8; j++)  // modified to test status led
+    for( j=0; j<8; j++)  // modified to test status led
     {
-        debugTextValue ( "\nBYTEs  :  ", j, DECIMAL );
-        debugText("\n");
+        //debugTextValue ( "\nBYTEs  :  ", j, DECIMAL );
+        //debugText("\n");
 
         for ( i = 0; i < 8; i++ )
         {
@@ -167,7 +150,7 @@ bool LEDSelfTest ( void )
                 retvalue = false;
             }
             oHmiLedStatus[ j ] = 0;
-            osDelay ( 300 );
+            osDelay ( 200 );
         }
 
         if ( LED_BYTE_SIZE <= Bytecnt++ )

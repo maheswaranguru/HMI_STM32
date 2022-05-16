@@ -25,6 +25,9 @@ static bool debugConsoletxCptF = true;
 static bool debugConsoleInit( void );
 static bool debugConsoleFlushOut( void );
 
+
+volatile static bool uartError_f = false;
+
 //!< @@@@@@@@@@@@@@@@@@@@ RING BUFF CONFIG @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 //#define RING_BUFF_SIZE 50
 
@@ -41,9 +44,16 @@ bool mDebugConInit = false;
 
 unsigned char hiw[] = "Hello World\n\r";
 
+//!< @@@@@@@@@@@@@@@@ Receive Command @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+#define MAX_CMD_LENGTH	25
+
 volatile static uint16_t RxByteCnt = 0;
-volatile static uint8_t RxString[25] = { 0 };
-volatile static uint8_t inputString[25] = { 0 };
+volatile static bool cmdRx_t = false;
+volatile static uint8_t RxString[ MAX_CMD_LENGTH ] = { 0 };
+volatile static uint8_t inputString[ MAX_CMD_LENGTH ] = { 0 };
+volatile static bool cmdError = false;
+
 
 
 uint8_t rxByte = 0;
@@ -54,27 +64,21 @@ void debugconsoleTask(void)
 	bool txStatus = true;
 
 
-	while( NULL == xMutexDebugUart )
-		xMutexDebugUart = xSemaphoreCreateBinary();
+	while( NULL == xMutexDebugUart );
 
-    if( ! debugConsoleInit() )
+	if( ! debugConsoleInit() )
     {
         while(1);           ///!< If uart initialization failed, don't run the task
     }else
     {
+
     	if( HAL_UART_STATE_READY == HAL_UART_GetState( &debugPort ) )
 		{
 			debugText("\n1******************************************** ");
-			 vTaskDelay(100);
 			debugText("\nThis is Base code Generation ");
-			 vTaskDelay(100);
-			debugText("\n#########    BASE CODE     ######### ");
-			 vTaskDelay(100);
-				debugText("\n*********************************************1\n\r");
-//				debugText("\n2*********************************************2");
-//				debugText("\n3*********************************************3");
-//				debugText("\n**********************************************4");
-			 vTaskDelay(100);
+			debugText("\n############    BASE CODE     ############ ");
+			debugText("\n*********************************************1\n\r");
+
 		}else
 		{
 			while(1);
@@ -88,7 +92,7 @@ void debugconsoleTask(void)
     	if( ( HAL_UART_STATE_READY == ( HAL_UART_GetState( &debugPort ) & HAL_UART_STATE_READY ) ) && ( writePtr != readPtr ) )
     	txStatus = debugConsoleFlushOut();
 
-    	if( HAL_UART_ERROR_NONE != HAL_UART_GetError(&debugPort) )
+    	if( (true == uartError_f )  || ( HAL_UART_ERROR_NONE != HAL_UART_GetError(&debugPort) ) )
     	{
     		HAL_UART_DeInit(&debugPort);
     		debugConsoleInit();
@@ -101,7 +105,15 @@ void debugconsoleTask(void)
     	     writePtr = 0;
     	     readPtr = 0;
     	}
-        vTaskDelay(1);
+
+    	if( true == cmdRx_t )
+    	{
+    		cmdRx_t = false;
+
+    		debugText( inputString );
+    	}
+
+        vTaskDelay(100);
 
     }
 }
@@ -152,15 +164,15 @@ bool debugText( const char *debugMsg )
     char *msg =(char*) debugMsg;
     bool returnValue = false;
 
-    xSemaphoreTake( xMutexDebugUart, 10 );
-    //vTaskDelay(1);
-
-    if( mDebugConInit )
+	//if ( true == xSemaphoreTake( xMutexDebugUart, portMAX_DELAY  ) )
     {
-    	addToRing( msg, strlen(msg) );
-    }
+        if( mDebugConInit )
+        {
+        	addToRing( msg, strlen(msg) );
+        }
 
-    xSemaphoreGive( xMutexDebugUart );
+        while ( pdTRUE != xSemaphoreGive( xMutexDebugUart ) );
+    }
 
     return ( returnValue );
 }
@@ -172,7 +184,7 @@ bool debugText( const char *debugMsg )
  *Return:- PASS / FAIL
  *Details:-
  **********************************************************************************/
-bool debugValue( uint32_t value, uint8_t baseValue)
+bool debugValue( int64_t value, uint8_t baseValue)
 {
 
     IntToText(value, baseValue, tempBuff);
@@ -188,14 +200,11 @@ bool debugValue( uint32_t value, uint8_t baseValue)
  *Return:-N/A
  *Details:-
  **********************************************************************************/
-bool debugTextValue( const char *debugMsg, uint32_t value, uint8_t baseValue )
+bool debugTextValue( const char *debugMsg, int64_t value, uint8_t baseValue )
 {
     bool returnValue = false;
     char localbuff[100] = { 0 };
 
-   // returnValue = debugText( debugMsg );
-
-    //while(   HAL_UART_STATE_READY != HAL_UART_GetState(&debugPort) );
 
     strcpy(localbuff, debugMsg );
 
@@ -213,11 +222,11 @@ bool debugTextValue( const char *debugMsg, uint32_t value, uint8_t baseValue )
  *Return:-N/A
  *Details:-
  **********************************************************************************/
-bool IntToText(uint32_t value, uint8_t base, char * str )
+bool IntToText(int64_t value, uint8_t base, char * str )
 {
-    uint32_t temp = 0;
+	int64_t temp = 0;
     uint8_t i = 0;
-    uint32_t division = value;
+    int64_t division = value;
 
     if( 0 == division )
     {
@@ -225,6 +234,10 @@ bool IntToText(uint32_t value, uint8_t base, char * str )
         *(str+i) = '\0';
     }else
     {
+    	if( 0 > division  )
+    	{
+    		division = abs(division);
+    	}
         while ( 0 != division )
         {
             temp = division%base;
@@ -251,6 +264,10 @@ bool IntToText(uint32_t value, uint8_t base, char * str )
 			*(str+i++) = ' ';
 		}
 
+    	if( ( 0 > value ) && ( base == DECIMAL ) )
+    	{
+    		*(str+i++) = '-';
+    	}
 
         *(str+i) = '\0';
         reverseStr(str, i);
@@ -295,6 +312,8 @@ void addToRing( char *strPtr, unsigned int strLeg )
 {
 	unsigned int remaingBuff = (RING_BUFF_SIZE - writePtr) - 1 ;
 
+	if ( true == xSemaphoreTake( xMutexDebugUart, portMAX_DELAY  ) )
+    {
 	if( remaingBuff > strLeg )
 	{
 		memcpy( &debugOutBuffer[writePtr], strPtr, strLeg);
@@ -306,6 +325,8 @@ void addToRing( char *strPtr, unsigned int strLeg )
 
 		writePtr = (strLeg-remaingBuff);
 	}
+
+    }
 }
 
 /*********************************************************************************
@@ -319,28 +340,32 @@ static bool debugConsoleFlushOut( void )
 {
     bool returnValue = true;
 
+
     if( ( mDebugConInit ) && ( writePtr != readPtr ) )
     {
 
 		if( writePtr > readPtr )
 		{
-     		//if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr)) )
-         	if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr), 100) )   //!< If don't want to use interrupt
+     		if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (uint16_t) (writePtr-readPtr)) )
+         	//if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (writePtr-readPtr), 100) )   //!< If don't want to use interrupt
 			{
 				returnValue &= false;
-			}
+			}else
+			{
 				readPtr = writePtr;
+			}
 
 		}else
 		{
-			//if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr)) )
-			if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr), 100 ) )   //!< If don't want to use interrupt
+			if( HAL_OK != HAL_UART_Transmit_IT(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (uint16_t) (RING_BUFF_SIZE-readPtr)) )
+			//if( HAL_OK != HAL_UART_Transmit(&debugPort, (uint8_t *)(debugOutBuffer+readPtr), (RING_BUFF_SIZE-readPtr), 100 ) )   //!< If don't want to use interrupt
 			{
 				returnValue &= false;
+			}else
+			{
+				debugConsoletxCptF = false;
+				readPtr = 0;
 			}
-			debugConsoletxCptF = false;
-			readPtr = 0;
-
 		}
 	}
 
@@ -348,12 +373,18 @@ static bool debugConsoleFlushOut( void )
 return returnValue;
 }
 
+bool debugTaskStatusGet( void )
+{
+	return(debugConsoletxCptF);
+}
+
 /***************************************************************************************
  * @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
  * ************************************************************************************/
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
 {
-	while(1);
+	//while(1);
+	uartError_f = true;
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
@@ -369,22 +400,28 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     RxString[RxByteCnt] = rxByte;
 
 
-    if( ( 25 <= RxByteCnt) || ( '\r' == rxByte) || ( '\n' == rxByte) )
+    if( ('\r' == rxByte) || ('\n' == rxByte) )
     {
         if( RxByteCnt != 0 )
         {
             strncpy( inputString, RxString, (RxByteCnt) );
             inputString[RxByteCnt] = '\0';
             RxByteCnt = 0;
+            cmdRx_t = true;
 
         }else
         {
-            RxByteCnt = 0;
+            //RxByteCnt = 0;
         }
 
     }else
     {
-        RxByteCnt++;
+        if( (MAX_CMD_LENGTH-1) <= RxByteCnt++ )
+        {
+        	HAL_UART_Receive_IT( &debugPort, &rxByte, 1);
+        	RxByteCnt = 0;
+        	//debugText("\nExceed Max Length !\n1:>");
+        }
     }
 
 
@@ -392,8 +429,4 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 
 }
-//void USART2_IRQHandler(void)
-//{
-//    HAL_UART_IRQHandler(&debugPort);
-//}
 
